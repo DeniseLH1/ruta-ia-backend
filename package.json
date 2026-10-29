@@ -1,0 +1,40 @@
+{
+  "name": "ruta-ia",
+  "version": "1.0.0",
+  "description": "API REST para el sistema inteligente de orientación académica y recomendación de cursos utilizando Node.js, Express, MongoDB y arquitectura RAG.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "ruta-ia",
+    "nodejs",
+    "express",
+    "mongodb",
+    "qdrant",
+    "rag",
+    "ai",
+    "recomendacion-cursos"
+  ],
+  "homepage": "https://github.com/DeniseLH1/ruta-ia#readme",
+  "bugs": {
+    "url": "https://github.com/DeniseLH1/ruta-ia/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeniseLH1/ruta-ia.git"
+  },
+  "license": "ISC",
+  "author": "DeniseLH1",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "mongodb": "^7.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
