@@ -3,11 +3,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Lee la URI y el nombre de la base de datos desde las variables de entorno
-const uri= process.env.MONGO_URI;
+const uri = process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME || 'ruta_ia_db';
 
 if (!uri){
-    console.error('Tu URI de MongoDB no está definida en el archivo env por favor revisa tu archivo .env');
+    console.error('La URI de MongoDB no está definida. Configura MONGODB_URI en tu archivo .env.');
     process.exit(1);
 }
 
