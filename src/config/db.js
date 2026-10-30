@@ -23,7 +23,7 @@ export async function connectDB(){
     try {
         await client.connect();
         dbConnection = client.db(dbName);
-        console.log('Conexión exitosa a (DB: ${dbName})');
+        console.log(`Conexión exitosa a ${dbName}`);
         return dbConnection;
     } catch(error){
         console.error('No se pudo establecer la conexión con MongoDB:', error);
