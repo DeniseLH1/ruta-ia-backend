@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import {connectDB } from './src/config/db.js';
+import studentRoutes from './src/routes/studentRoutes.js'
 
 // Carga de las variables de entorno
 dotenv.config();
@@ -13,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 // ==== Middleware Globales ===
 app.use(cors());
 app.use(express.json());
+
+// Rutas de la API
+app.use('/api/students',studentRoutes);
 
 // ==== Rutas de Verificación ===
 app.get('/',(req,res)=>{
