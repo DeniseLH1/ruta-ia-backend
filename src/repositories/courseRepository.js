@@ -1,5 +1,5 @@
 import {connectDB} from '../config/db.js';
-import { ObjectId, ReturnDocument } from 'mongodb';
+import { ObjectId} from 'mongodb';
 
 const COLLECTION_NAME = 'cursos';
 
@@ -11,9 +11,9 @@ async function getCollection() {
 
 // Inserta un nuevo curso 
 export async function createCourse(courseData) {
-    const collection = await getCollection;
+    const collection = await getCollection();
     const result = await collection.insertOne(courseData);
-    return { id: result.insertId, ...courseData};
+    return { id: result.insertedId, ...courseData};
 }
 
 // Obtenemos los cursos registrados 
