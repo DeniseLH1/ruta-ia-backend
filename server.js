@@ -6,6 +6,7 @@ import studentRoutes from './src/routes/studentRoutes.js'
 import courseRoutes from './src/routes/courseRoutes.js'
 import chatRoutes from './src/routes/chatRoutes.js'
 import consultationRoutes from './src/routes/consultationRoutes.js'
+import { errorHandler } from './src/middlewares/errorMiddleware.js';
 
 // Carga de las variables de entorno
 dotenv.config();
@@ -32,6 +33,8 @@ app.get('/',(req,res)=>{
         version:'1.0.0'
     });
 });
+
+app.use(errorHandler);
 
 // == Inicialización del Servidor y Base de Datos ===
 async function startServer(){
