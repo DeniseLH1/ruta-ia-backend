@@ -117,7 +117,7 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "={\n  \"respuesta\": \"{{ $('Generador de Respuesta').first().json.choices[0].message.content }}\"\n}",
+        "responseBody": "={{ $('Generador de Respuesta').item.json.choices[0].message.content }}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -206,7 +206,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "0a1dbc45-acfd-48dc-9799-d9e5df62a607",
+  "versionId": "87396744-ddcf-40b2-8f71-c267d12d7d55",
   "meta": {
     "instanceId": "9c407c48ccd4b2b0445c2b3d13d705213099345dbdea9f8c39b6b692e67b421e"
   },
