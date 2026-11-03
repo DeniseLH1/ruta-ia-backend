@@ -1,0 +1,162 @@
+{
+  "name": "Indexación_cursos",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -576
+      ],
+      "id": "d424b3cb-affe-4166-a639-ce9709f7fa5e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3000/api/courses",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -304,
+        -576
+      ],
+      "id": "01ebb9d7-cd34-439d-b90e-c3b741620b26",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {
+          "includeBinary": false
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        -576
+      ],
+      "id": "dab18661-dbd0-4eac-bfc8-bf0ea55b3f3d",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/text-embedding-3-small\",\n  \"input\": \"{{ $json.descripcion }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -176,
+        -320
+      ],
+      "id": "d70dad00-ab7c-47cd-9f31-3b6718a9163c",
+      "name": "OpenRouter",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "F7NJlyWR2RVF5LlF",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://qdrant:6333/collections/cursos_ia/points",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"points\": [\n    {\n      \"id\": {{ $itemIndex + 1 }},\n      \"vector\": {{ JSON.stringify($json.data[0].embedding) }},\n      \"payload\": {\n        \"mongo_id\": \"{{ $('Split Out').item.json._id }}\",\n        \"nombre\": \"{{ $('Split Out').item.json.nombre }}\",\n        \"descripcion\": \"{{ $('Split Out').item.json.descripcion }}\",\n        \"categoria\": \"{{ $('Split Out').item.json.categoria }}\",\n        \"nivel\": \"{{ $('Split Out').item.json.nivel }}\",\n        \"duracion\": \"{{ $('Split Out').item.json.duración }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        48,
+        -320
+      ],
+      "id": "09dd7486-da4d-4e43-92f5-1a4a641e013e",
+      "name": "Qdrant"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter": {
+      "main": [
+        [
+          {
+            "node": "Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "aab5e50c-98e8-42cd-b16e-c8b74ecf671f",
+  "meta": {
+    "instanceId": "9c407c48ccd4b2b0445c2b3d13d705213099345dbdea9f8c39b6b692e67b421e"
+  },
+  "nodeGroups": [],
+  "id": "HFJgok9f0YPkN6Cj",
+  "tags": []
+}

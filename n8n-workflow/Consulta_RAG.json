@@ -1,0 +1,192 @@
+{
+  "name": "Consulta_RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat_curso",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -832,
+        -336
+      ],
+      "id": "e7fcc779-5065-48ac-a896-c51ce6fd3074",
+      "name": "Webhook",
+      "webhookId": "1055126e-6150-4d15-88a9-367112e3ac01"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/cursos_ia/points/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vector\": {{ JSON.stringify($json.data[0].embedding) }},\n  \"limit\": 3,\n  \"with_payload\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -416,
+        -336
+      ],
+      "id": "c39740c2-cded-418b-8769-e75154ca31ec",
+      "name": "Busca cursos similares Qdrant"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/text-embedding-3-small\",\n  \"input\": \"{{ $json.body.mensaje }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -624,
+        -336
+      ],
+      "id": "005cb034-4c5e-461d-adff-03b8554635bf",
+      "name": "Generador de Embedding",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "F7NJlyWR2RVF5LlF",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un asistente virtual experto de una plataforma de cursos. Responde usando la información de los cursos del contexto.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Pregunta: {{ $('Webhook').first().json.body.mensaje }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -208,
+        -336
+      ],
+      "id": "93690609-4d3a-4889-9b53-bc98acb77846",
+      "name": "Generador de Respuesta",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "F7NJlyWR2RVF5LlF",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={\n  \"respuesta\": \"{{ $('Generador de Respuesta').first().json.choices[0].message.content }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -336
+      ],
+      "id": "740170cb-3e8b-40f3-89f0-dcb1f87ec12d",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generador de Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generador de Embedding": {
+      "main": [
+        [
+          {
+            "node": "Busca cursos similares Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca cursos similares Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Generador de Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generador de Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b6926615-283c-478f-9c2c-f3b19a55df11",
+  "meta": {
+    "instanceId": "9c407c48ccd4b2b0445c2b3d13d705213099345dbdea9f8c39b6b692e67b421e"
+  },
+  "nodeGroups": [],
+  "id": "wqp0sf7tcjNcaN4l",
+  "tags": []
+}
