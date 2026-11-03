@@ -5,11 +5,21 @@ const ALLOWED_LEVELS = ['Principiante', 'Intermedio', 'Avanzado'];
 
 // Reglas del negocio para registrar un nuevo estudiante
 export async function registrerStudent(data) {
-    const {nombreCompleto, email, nivelExperiencia, areaInteres }=data;
-    // Validación de campos obligatorios
-    if(!nombreCompleto || !email || !nivelExperiencia || !areaInteres){
-        throw new Error('Este campo es obligatorio');
+    const { nombreCompleto, email, nivelExperiencia, areaInteres } = data ?? {};
+
+    if (typeof nombreCompleto !== 'string' || !nombreCompleto.trim()) {
+        throw new Error('El nombre completo es obligatorio');
     }
+    if (typeof email !== 'string' || !email.trim()) {
+        throw new Error('El correo electrónico es obligatorio');
+    }
+    if (typeof nivelExperiencia !== 'string' || !nivelExperiencia.trim()) {
+        throw new Error('El nivel de experiencia es obligatorio');
+    }
+    if (typeof areaInteres !== 'string' || !areaInteres.trim()) {
+        throw new Error('El área de interés es obligatoria');
+    }
+
     // Validación de nivel de experiencia que son permitidos 
     if(!ALLOWED_LEVELS.includes(nivelExperiencia)){
         throw new Error('Nivel de experiencia inválido')
