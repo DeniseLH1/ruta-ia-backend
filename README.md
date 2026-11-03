@@ -74,7 +74,7 @@ Crea un archivo .env basado en .env.example:
 - PORT=3000
 - MONGODB_URI=mongodb://localhost:27017
 - DB_NAME=ruta_ia_db
-- N8N_WEBHOOK_URL=http://localhost:5678/webhook
+- N8N_WEBHOOK_URL=http://localhost:5678/webhook-test/chat_curso
 - QDRANT_URL=http://localhost:6333/dashboard
 
 **Ejecución de Contenedores y Servicios**
