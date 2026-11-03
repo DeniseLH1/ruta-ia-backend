@@ -20,7 +20,7 @@ export async function processConsultation(studentId, mensaje) {
     };
     const savedConsultation = await consultationRepository.createConsultation(initialData);
     const consultationId = savedConsultation.id;
-    try {
+   try {
         const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/chat_curso';
         // Enviar a n8n 
         const response = await axios.post(N8N_WEBHOOK_URL, {
@@ -30,13 +30,16 @@ export async function processConsultation(studentId, mensaje) {
             areaInteres: student.areaInteres
         });
         const n8nData = response.data;
-        // Captura el texto si viene en .respuesta, .content o dentro de un objeto de IA
-        const respuestaIA = n8nData.respuesta || n8nData.content || n8nData.message || 'No se generó respuesta.';
-        // Extrae las fuentes si existen, o deja un arreglo vacío
-        const fuentes = n8nData.fuentes || [];   
-        // Define el estado final basándose en si la IA generó texto real
+        // Detecta si n8n devolvió texto plano o un objeto JSON
+        let respuestaIA = 'No se generó respuesta.';
+        if (typeof n8nData === 'string') {
+            respuestaIA = n8nData;
+        } else if (n8nData && typeof n8nData === 'object') {
+            respuestaIA = n8nData.respuesta || n8nData.content || n8nData.message || 'No se generó respuesta.';
+        }
+        const fuentes = (n8nData && typeof n8nData === 'object' && n8nData.fuentes) ? n8nData.fuentes : [];
         const estadoFinal = (respuestaIA !== 'No se generó respuesta.' && respuestaIA.trim() !== '') ? 'Respondida' : 'Sin resultados';
-        // Actualiza la consulta con la respuesta y fuentes definitivas
+        // Actualizar la consulta con la respuesta y fuentes definitivas
         const updated = await consultationRepository.updateConsultation(consultationId, {
             estado: estadoFinal,
             respuesta: respuestaIA,
