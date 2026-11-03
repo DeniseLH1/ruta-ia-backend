@@ -95,7 +95,7 @@ npm run dev
 
 ## Endpoints Principales de la API
 1. Estudiantes (/api/students)
-POST /api/students - Registrar un estudiante (Valida correo y niveles: Principiante, Intermedio, Avanzado).
+POST /api/students - Registrar un estudiante. Requiere `nombreCompleto`, `email`, `nivelExperiencia` y `areaInteres`; si falta uno, la respuesta indica cuál es obligatorio. Los niveles permitidos son `Principiante`, `Intermedio` y `Avanzado`.
 
 GET /api/students - Listar todos los estudiantes registrados.
 
@@ -106,7 +106,7 @@ GET /api/courses - Consulta cursos activos (permite filtrar por categoria y nive
 
 GET /api/courses/:id - Obtener detalles de un curso específico.
 
-POST /api/courses - Registrar un nuevo curso 
+POST /api/courses - Registrar un nuevo curso. Requiere `nombre`, `descripcion`, `categoria`, `nivel` y `duración`; si falta uno, la respuesta indica cuál es obligatorio. La duración debe ser un número mayor a cero y los niveles permitidos son `Básico`, `Intermedio` y `Avanzado`.
 
 PUT /api/courses/:id - Actualizar información del curso.
 
