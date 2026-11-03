@@ -43,13 +43,25 @@ ruta-ia-backend/
 │   ├── config/
 │   │   └── db.js
 │   ├── controllers/
-│   │   (chatController, courseController, studentController, consultationController)
+│   │   ├── chatController.js
+│   │   ├── courseController.js
+│   │   ├── studentController.js
+│   │   └── consultationController.js
+│   ├── middlewares/
+│   │   └── errorMiddleware.js
 │   ├── repositories/
-│   │   (courseRepository, studentRepository, consultationRepository)
+│   │   ├── courseRepository.js
+│   │   ├── studentRepository.js
+│   │   └── consultationRepository.js
 │   ├── routes/
-│   │   (chatRoutes, courseRoutes, studentRoutes, consultationRoutes)
+│   │   ├── chatRoutes.js
+│   │   ├── courseRoutes.js
+│   │   ├── studentRoutes.js
+│   │   └── consultationRoutes.js
 │   └── services/
-│       (courseService, studentService, consultaService)
+│       ├── courseService.js
+│       ├── studentService.js
+│       └── consultaService.js
 │
 ├── .env.example
 ├── .gitignore
@@ -70,14 +82,16 @@ cd ruta-ia-backend
 npm install
 ```
 **Configurar las variables de entorno:**
-Crea un archivo .env basado en .env.example:
-- PORT=3000
-- MONGODB_URI=mongodb://localhost:27017
-- DB_NAME=ruta_ia_db
-- N8N_WEBHOOK_URL=http://localhost:5678/webhook-test/chat_curso
-- QDRANT_URL=http://localhost:6333/dashboard
+Crea un archivo `.env` basado en `.env.example`. Para ejecutar localmente, configura:
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017
+DB_NAME=ruta_ia_db
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/chat_curso
+```
+`N8N_WEBHOOK_URL` debe apuntar al webhook activo de n8n; usa `/webhook-test/chat_curso` solo mientras el workflow esté en modo de prueba. `QDRANT_URL` aparece en `.env.example`, pero el código actual no la utiliza: los workflows acceden a Qdrant usando `http://qdrant:6333` dentro de Docker.
 
-**Ejecución de Contenedores y Servicios**
+**Ejecución de contenedores y servicios**
 Levantar infraestructura (Qdrant y n8n):
 ```
 docker-compose up -d
@@ -95,31 +109,34 @@ npm run dev
 
 ## Endpoints Principales de la API
 1. Estudiantes (/api/students)
-POST /api/students - Registrar un estudiante. Requiere `nombreCompleto`, `email`, `nivelExperiencia` y `areaInteres`; si falta uno, la respuesta indica cuál es obligatorio. Los niveles permitidos son `Principiante`, `Intermedio` y `Avanzado`.
+- `POST /api/students` - Registrar un estudiante. Requiere `nombreCompleto`, `email`, `nivelExperiencia` y `areaInteres`; si falta uno, la respuesta indica cuál es obligatorio. Los niveles permitidos son `Principiante`, `Intermedio` y `Avanzado`.
 
-GET /api/students - Listar todos los estudiantes registrados.
+- `GET /api/students` - Listar todos los estudiantes registrados.
 
-GET /api/students/:id - Consultar un estudiante por ID.
+- `GET /api/students/:id` - Consultar un estudiante por ID.
 
 2. Cursos (/api/courses)
-GET /api/courses - Consulta cursos activos (permite filtrar por categoria y nivel).
+- `GET /api/courses` - Consultar cursos activos; permite filtrar con `categoria` y `nivel`.
 
-GET /api/courses/:id - Obtener detalles de un curso específico.
+- `GET /api/courses/:id` - Obtener detalles de un curso específico.
 
-POST /api/courses - Registrar un nuevo curso. Requiere `nombre`, `descripcion`, `categoria`, `nivel` y `duración`; si falta uno, la respuesta indica cuál es obligatorio. La duración debe ser un número mayor a cero y los niveles permitidos son `Básico`, `Intermedio` y `Avanzado`.
+- `POST /api/courses` - Registrar un nuevo curso. Requiere `nombre`, `descripcion`, `categoria`, `nivel` y `duración`; si falta uno, la respuesta indica cuál es obligatorio. La duración debe ser un número mayor a cero y los niveles permitidos son `Básico`, `Intermedio` y `Avanzado`.
 
-PUT /api/courses/:id - Actualizar información del curso.
+- `PUT /api/courses/:id` - Actualizar información del curso.
 
-PATCH /api/courses/:id/disable - Desactivar un curso.
+- `PATCH /api/courses/:id/disable` - Desactivar un curso.
 
 3. Consultas Inteligentes y RAG 
-POST /api/consultations - Envía la pregunta de un estudiante, procesa el flujo RAG a través de n8n y almacena la recomendación con sus fuentes.
+- `POST /api/consultation` - Envía una consulta RAG. Recibe `studentId` y `mensaje`, y almacena la recomendación y sus fuentes.
 
-GET /api/consultations - Muestra el historial completo de consultas con fecha, estado y fuentes.
+- `GET /api/consultation` - Mostrar el historial de consultas con fecha, estado y fuentes.
 
-POST /api/consultations/:id/rate - Permite registrar una calificación única (1 a 5) y un comentario opcional.
+- `POST /api/consultation/:id/rate` - Registrar una calificación única (de 1 a 5) y un comentario opcional.
 
-GET /api/consultations/stats - Obtiene estadísticas básicas (total de consultas, respondidas, sin resultados, promedio de calificaciones y curso más recomendado).
+- `GET /api/consultation/stats` - Obtener estadísticas (total de consultas, respondidas, sin resultados, promedio de calificaciones y curso más recomendado).
+
+4. Asistente de chat
+- `POST /api/chat/chat` - Envía un mensaje al asistente conectado a n8n. Recibe `mensaje`.
 
 ## Pruebas Obligatorias
 El sistema ha sido probado con los casos de uso obligatorios definidos por la academia, incluyendo:
