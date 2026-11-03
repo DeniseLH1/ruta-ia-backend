@@ -30,13 +30,16 @@ export async function processConsultation(studentId, mensaje) {
             areaInteres: student.areaInteres
         });
         const n8nData = response.data;
-        // Determinar estado final basado en si hay fuentes recuperadas
-        const fuentes = n8nData.fuentes || [];
-        const estadoFinal = fuentes.length > 0 ? 'Respondida' : 'Sin resultados';
-        // Actualizar la consulta con la respuesta y fuentes
+        // Captura el texto si viene en .respuesta, .content o dentro de un objeto de IA
+        const respuestaIA = n8nData.respuesta || n8nData.content || n8nData.message || 'No se generó respuesta.';
+        // Extrae las fuentes si existen, o deja un arreglo vacío
+        const fuentes = n8nData.fuentes || [];   
+        // Define el estado final basándose en si la IA generó texto real
+        const estadoFinal = (respuestaIA !== 'No se generó respuesta.' && respuestaIA.trim() !== '') ? 'Respondida' : 'Sin resultados';
+        // Actualiza la consulta con la respuesta y fuentes definitivas
         const updated = await consultationRepository.updateConsultation(consultationId, {
             estado: estadoFinal,
-            respuesta: n8nData.respuesta || 'No se generó respuesta.',
+            respuesta: respuestaIA,
             fuentes
         });
         return updated;
