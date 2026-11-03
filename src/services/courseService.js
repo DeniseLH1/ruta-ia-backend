@@ -5,11 +5,24 @@ const ALLOWED_COURSE_LEVELS=['Básico','Intermedio','Avanzado'];
 
 //Registra un nuevo curso
 export async function registerCourse(data) {
-    const{nombre,descripcion,categoria,nivel,duración} = data;
-    // Campos obligatorios 
-    if(!nombre || !descripcion || !categoria || !nivel || duración === undefined){
-        throw new Error('Estos campos son obligatorios')
+    const { nombre, descripcion, categoria, nivel, duración } = data ?? {};
+
+    if (typeof nombre !== 'string' || !nombre.trim()) {
+        throw new Error('El nombre del curso es obligatorio');
     }
+    if (typeof descripcion !== 'string' || !descripcion.trim()) {
+        throw new Error('La descripción del curso es obligatoria');
+    }
+    if (typeof categoria !== 'string' || !categoria.trim()) {
+        throw new Error('La categoría del curso es obligatoria');
+    }
+    if (typeof nivel !== 'string' || !nivel.trim()) {
+        throw new Error('El nivel del curso es obligatorio');
+    }
+    if (duración === undefined || duración === null) {
+        throw new Error('La duración del curso es obligatoria');
+    }
+
     // La duración debe ser mayor a cero
     if(typeof duración !== 'number' || duración <= 0){
         throw new Error('La duración debe ser un numero mayor a cero');
