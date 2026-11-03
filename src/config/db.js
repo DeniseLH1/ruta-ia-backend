@@ -1,40 +1,31 @@
-import {MongoClient} from 'mongodb';
-import dotenv from 'dotenv';
-dotenv.config();
+import { MongoClient } from 'mongodb';
 
-// Lee la URI y el nombre de la base de datos desde las variables de entorno
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.DB_NAME || 'ruta_ia_db';
+// Conserva el cliente y la base de datos para reutilizar la conexión.
+let client = null;
+let dbInstance = null;
 
-if (!uri){
-    console.error('La URI de MongoDB no está definida. Configura MONGODB_URI en tu archivo .env.');
-    process.exit(1);
-}
-
-// Crea una instancia del cliente de MongoDB
-const client = new MongoClient(uri);
-let dbConnection = null;
-
-export async function connectDB(){
-    if(dbConnection){
-        return dbConnection;
-    }
-
+// Conecta con MongoDB y devuelve la instancia de la base de datos.
+export async function connectDB() {
     try {
+        // Evita abrir una nueva conexión si ya se inicializó la base de datos.
+        if (dbInstance) {
+            return dbInstance;
+        }
+        // Lee la dirección de MongoDB y el nombre de la base desde el entorno.
+        const uri = process.env.MONGODB_URI;
+        const dbName = process.env.DB_NAME;
+        // Detiene la conexión si falta alguna configuración.
+        if (!uri || !dbName) {
+            throw new Error('Faltan variables de entorno para la conexión a MongoDB (MONGODB_URI o DB_NAME).');
+        }
+        // Crea el cliente e inicia la conexión con el servidor de MongoDB.
+        client = new MongoClient(uri);
         await client.connect();
-        dbConnection = client.db(dbName);
-        console.log(`Conexión exitosa a ${dbName}`);
-        return dbConnection;
-    } catch(error){
-        console.error('No se pudo establecer la conexión con MongoDB:', error);
-        process.exit(1);
-    }
-}
-
-export async function closeDB(){
-    if(client){
-        await client.close();
-        dbConnection= null;
-        console.log('Conexión a MongoDB cerrada exitosamente')
+        dbInstance = client.db(dbName);
+        console.log(' Conectado exitosamente a MongoDB');
+        return dbInstance;
+    } catch (error) {
+        console.error('Error crítico al conectar con MongoDB:', error.message);
+        throw error;
     }
 }
