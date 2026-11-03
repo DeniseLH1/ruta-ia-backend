@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import {connectDB } from './src/config/db.js';
 import studentRoutes from './src/routes/studentRoutes.js'
 import courseRoutes from './src/routes/courseRoutes.js'
+import chatRoutes from './src/routes/chatRoutes.js'
 
 // Carga de las variables de entorno
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 // Rutas de la API
 app.use('/api/students',studentRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/chat',chatRoutes);
 
 // ==== Rutas de Verificación ===
 app.get('/',(req,res)=>{
