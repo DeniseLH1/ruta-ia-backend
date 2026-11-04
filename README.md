@@ -96,7 +96,7 @@ MONGODB_URI=mongodb://localhost:27017
 DB_NAME=ruta_ia_db
 N8N_WEBHOOK_URL=http://localhost:5678/webhook/chat_curso
 ```
-`N8N_WEBHOOK_URL` debe apuntar al webhook activo de n8n; usa `/webhook-test/chat_curso` solo mientras el workflow esté en modo de prueba. `QDRANT_URL` aparece en `.env.example`, pero el código actual no la utiliza: los workflows acceden a Qdrant usando `http://qdrant:6333` dentro de Docker.
+`N8N_WEBHOOK_URL` debe apuntar al webhook de producción: `http://localhost:5678/webhook/chat_curso`. No uses `/webhook-test/chat_curso` para el chat normal: esa URL solo funciona mientras se ejecuta el workflow manualmente en modo de prueba. Tras cambiar el `.env`, reinicia el backend para que cargue la URL nueva. `QDRANT_URL` aparece en `.env.example`, pero el código actual no la utiliza: los workflows acceden a Qdrant usando `http://qdrant:6333` dentro de Docker.
 
 **Ejecución de contenedores y servicios**
 Levantar infraestructura (Qdrant y n8n):
@@ -114,7 +114,7 @@ npm run dev
 
 2. Importa los archivos JSON ubicados en la carpeta n8n-workflow/ (Indexación_cursos.json y Consulta_RAG.json).
 
-3. Activa los flujos y verifica las credenciales de OpenRouter.
+3. Verifica las credenciales de OpenRouter y activa el workflow `Consulta_RAG` una sola vez en n8n. Cuando esté activo, el nodo Webhook recibe automáticamente cada pregunta del backend; no hace falta pulsar **Execute workflow** por cada consulta. El workflow `Indexación_cursos` sí se ejecuta manualmente cuando quieras volver a indexar cursos.
 
 El workflow `Indexación_cursos` crea `cursos_ia` si falta (1536 dimensiones, distancia Cosine) y la reutiliza si ya existe. Registra al menos 20 cursos activos y ejecuta el workflow después de importar los cambios para indexarlos con el campo `estado` y los IDs deterministas. Si la colección ya existe con otra configuración de vectores, corrige esa configuración en Qdrant antes de indexar.
 
