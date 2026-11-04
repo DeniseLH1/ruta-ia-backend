@@ -1,17 +1,24 @@
 import * as studentRepository from '../repositories/studentRepository.js';
+import bcrypt from 'bcryptjs';
 
 //Definimos los niveles de experiencia qu son permitidos 
 const ALLOWED_LEVELS = ['Principiante', 'Intermedio', 'Avanzado'];
 
 // Reglas del negocio para registrar un nuevo estudiante
-export async function registrerStudent(data) {
-    const { nombreCompleto, email, nivelExperiencia, areaInteres } = data ?? {};
+export async function registrerStudent(data, passwordRounds = 12) {
+    const { nombreCompleto, email, nivelExperiencia, areaInteres, password } = data ?? {};
 
     if (typeof nombreCompleto !== 'string' || !nombreCompleto.trim()) {
         throw new Error('El nombre completo es obligatorio');
     }
     if (typeof email !== 'string' || !email.trim()) {
         throw new Error('El correo electrónico es obligatorio');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        throw new Error('El correo electrónico no es válido');
+    }
+    if (typeof password !== 'string' || password.length < 8) {
+        throw new Error('La contraseña debe tener al menos 8 caracteres');
     }
     if (typeof nivelExperiencia !== 'string' || !nivelExperiencia.trim()) {
         throw new Error('El nivel de experiencia es obligatorio');
@@ -25,22 +32,26 @@ export async function registrerStudent(data) {
         throw new Error('Nivel de experiencia inválido')
     }
     // Verifica si el correo ya está registrado 
-    const existingStudent = await studentRepository.findStudentByEmail(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingStudent = await studentRepository.findStudentByEmail(normalizedEmail);
     if (existingStudent){
         throw new Error('Este correo ya se encuentra registrado por favor ingresa otro');
     }
 
     //Creación de la estructura del estudiante 
+    // Guarda solo el hash de contraseña; nunca se devuelve desde el servicio.
     const newStudentData = {
         nombreCompleto,
-        email,
+        email: normalizedEmail,
         nivelExperiencia,
-        areaInteres,
+        areaInteres: areaInteres.trim(),
+        passwordHash: await bcrypt.hash(password, passwordRounds),
         fechaRegistro: new Date()
     };
 
     const savedStudent = await studentRepository.createStudent(newStudentData);
-    return savedStudent;
+    const { passwordHash, ...safeStudent } = savedStudent;
+    return safeStudent;
 }
 
 // Obtiene la lista de todos los estudiantes

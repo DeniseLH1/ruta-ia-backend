@@ -1,4 +1,5 @@
 import * as courseRepository from '../repositories/courseRepository.js'
+import { removeCourseVector } from './qdrantService.js';
 
 //Niveles permitidos para cursos
 const ALLOWED_COURSE_LEVELS=['Básico','Intermedio','Avanzado'];
@@ -61,6 +62,11 @@ export async function getActiveCatalog(queryParams) {
     return await courseRepository.findActiveCourses(filter);
 }
 
+// La lista completa se usa solo en la vista administrativa protegida.
+export async function getAllCourses() {
+  return await courseRepository.findAllCourses();
+}
+
 // Obtenemos un curso por su id
 export async function getCourseById(id) {
   const course = await courseRepository.findCourseById(id);
@@ -86,6 +92,11 @@ export async function updateExistingCourse(id, data) {
 
 // Desactivar un curso
 export async function disableCourse(id) {
+  const course = await courseRepository.findCourseById(id);
+  if (!course) {
+    throw new Error('No se pudo desactivar el curso. Verifica el ID.');
+  }
+  await removeCourseVector(course._id);
   const disabledCourse = await courseRepository.deactivateCourse(id);
   if (!disabledCourse) {
     throw new Error('No se pudo desactivar el curso. Verifica el ID.');

@@ -1,16 +1,27 @@
 import * as studentService from '../services/studentService.js';
+import * as authService from '../services/authService.js';
 
 // Registra un estudiante
 export async function postRegisterStudent(req,res) {
     try{
-        const student = await studentService.registrerStudent(req.body);
+        const session = await authService.registerStudentAccount(req.body);
         return res.status(201).json({
             status:'success',
             message: 'Estudiante registrado exitosamente',
-            data: student
+            data: session
         });
     }catch(error){
-        return res.status(400).json({
+        if (error.code === 11000) {
+            return res.status(409).json({
+                status: 'error',
+                message: 'Este correo ya se encuentra registrado.'
+            });
+        }
+        const statusCode = error.code === 'JWT_CONFIGURATION_ERROR'
+            ? 500
+            : error.message.includes('obligatorio') || error.message.includes('inválido') ? 400 : 500;
+        if (statusCode === 500) console.error('Error al registrar estudiante:', error.message);
+        return res.status(statusCode).json({
             status:'error',
             message: error.message
         });

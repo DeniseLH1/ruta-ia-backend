@@ -21,7 +21,9 @@ export async function postRegisterCourse(req, res) {
 export async function getCatalog(req, res) {
   try {
     const filters = req.query; 
-    const courses = await courseService.getActiveCatalog(filters);
+    const courses = req.path === '/admin'
+      ? await courseService.getAllCourses()
+      : await courseService.getActiveCatalog(filters);
     return res.status(200).json({
       status: 'success',
       total: courses.length,
@@ -81,7 +83,8 @@ export async function patchDisableCourse(req, res) {
       data: disabledCourse
     });
   } catch (error) {
-    return res.status(400).json({
+    const statusCode = error.code === 'QDRANT_ERROR' ? 503 : 400;
+    return res.status(statusCode).json({
       status: 'error',
       message: error.message
     });

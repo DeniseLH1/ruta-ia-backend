@@ -12,7 +12,10 @@ async function getCollection(){
 // Busca a un estudiante por su correo electrónico 
 export async function findStudentByEmail(email){
     const collection = await getCollection();
-    return await collection.findOne({email});
+    return await collection.findOne(
+        { email },
+        { collation: { locale: 'en', strength: 2 } }
+    );
 }
 
 //Inserta un nuevo esudiante a la base de datos 
@@ -25,7 +28,7 @@ export async function createStudent(studentData) {
 //Obtiene la lista de los estudiantes registrados 
 export async function findAllStudents() {
     const collection = await  getCollection();
-    return await collection.find({}).toArray();
+    return await collection.find({}, { projection: { passwordHash: 0 } }).toArray();
 }
 
 //Busqurda de un estudiante por su ID
@@ -33,7 +36,10 @@ export async function findStudentById(id){
     try{
         const collection = await getCollection();
         if(!ObjectId.isValid(id)) return null;
-        return await collection.findOne({_id: new ObjectId(id)});
+        return await collection.findOne(
+            { _id: new ObjectId(id) },
+            { projection: { passwordHash: 0 } }
+        );
     } catch(error){
         throw new Error('Error al buscar el estudiante')
     }

@@ -30,19 +30,54 @@ export async function updateConsultation(id, updateData) {
     return await findConsultationById(id);
 }
 
-export async function addConsultationRating(id, ratingData) {
+export async function addConsultationRating(id, studentId, ratingData) {
     const collection = await getCollection();
-    if (!ObjectId.isValid(id)) return null;
+    if (!ObjectId.isValid(id) || !ObjectId.isValid(studentId)) return null;
     const result = await collection.updateOne(
         {
             _id: new ObjectId(id),
+            studentId: new ObjectId(studentId),
             estado: 'Respondida',
-            calificacion: { $exists: false }
+            calificacion: { $exists: false },
+            archivedAt: { $exists: false }
         },
         { $set: ratingData }
     );
     if (result.matchedCount === 0) return null;
     return await findConsultationById(id);
+}
+
+// Solo el propietario puede editar una calificación y solo mientras siga en su historial.
+export async function updateConsultationRating(id, studentId, ratingData) {
+    const collection = await getCollection();
+    if (!ObjectId.isValid(id) || !ObjectId.isValid(studentId)) return null;
+    const result = await collection.updateOne(
+        {
+            _id: new ObjectId(id),
+            studentId: new ObjectId(studentId),
+            estado: 'Respondida',
+            calificacion: { $exists: true },
+            archivedAt: { $exists: false }
+        },
+        { $set: ratingData }
+    );
+    if (result.matchedCount === 0) return null;
+    return await findConsultationById(id);
+}
+
+// Archiva la consulta para el estudiante sin borrarla de las estadísticas agregadas.
+export async function archiveConsultation(id, studentId) {
+    const collection = await getCollection();
+    if (!ObjectId.isValid(id) || !ObjectId.isValid(studentId)) return false;
+    const result = await collection.updateOne(
+        {
+            _id: new ObjectId(id),
+            studentId: new ObjectId(studentId),
+            archivedAt: { $exists: false }
+        },
+        { $set: { archivedAt: new Date() } }
+    );
+    return result.modifiedCount === 1;
 }
 
 export async function findConsultationById(id) {
@@ -60,7 +95,7 @@ export async function findConsultationsByStudentId(studentId) {
     const collection = await getCollection();
     if (!ObjectId.isValid(studentId)) return null;
     return await collection
-        .find({ studentId: new ObjectId(studentId) })
+        .find({ studentId: new ObjectId(studentId), archivedAt: { $exists: false } })
         .sort({ fecha: -1 })
         .toArray();
 }

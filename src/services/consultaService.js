@@ -60,9 +60,12 @@ export async function processConsultation(studentId, mensaje) {
 }
 
 // Calificación (1 a 5) y comentario opcional
-export async function rateConsultation(consultationId, calificacion, comentario) {
+export async function rateConsultation(consultationId, studentId, calificacion, comentario) {
     if (!Number.isInteger(calificacion) || calificacion < 1 || calificacion > 5) {
         throw new Error('La calificación debe ser un valor entre 1 y 5.');
+    }
+    if (comentario !== undefined && typeof comentario !== 'string') {
+        throw new Error('El comentario debe ser texto.');
     }
     const consultation = await consultationRepository.findConsultationById(consultationId);
     if (!consultation) {
@@ -71,18 +74,60 @@ export async function rateConsultation(consultationId, calificacion, comentario)
     if (consultation.estado !== 'Respondida') {
         throw new Error('Solo se pueden calificar consultas respondidas.');
     }
+    if (String(consultation.studentId) !== String(studentId)) {
+        throw new Error('No tienes permiso para calificar esta consulta.');
+    }
+    if (consultation.archivedAt) {
+        throw new Error('No se puede calificar una consulta eliminada del historial.');
+    }
     if (consultation.calificacion !== undefined) {
         throw new Error('Esta recomendación ya ha sido calificada anteriormente.');
     }
-    const updatedConsultation = await consultationRepository.addConsultationRating(consultationId, {
-        calificacion,
-        comentario: comentario || '',
-        fechaCalificacion: new Date()
-    });
+    const updatedConsultation = await consultationRepository.addConsultationRating(
+        consultationId,
+        studentId,
+        {
+            calificacion,
+            comentario: typeof comentario === 'string' ? comentario : '',
+            fechaCalificacion: new Date()
+        }
+    );
     if (!updatedConsultation) {
         throw new Error('Esta recomendación ya ha sido calificada anteriormente.');
     }
     return updatedConsultation;
+}
+
+// Revalida el rango antes de guardar una edición del propio estudiante.
+export async function updateConsultationRating(consultationId, studentId, calificacion, comentario) {
+    if (!Number.isInteger(calificacion) || calificacion < 1 || calificacion > 5) {
+        throw new Error('La calificación debe ser un valor entre uno y cinco.');
+    }
+    if (comentario !== undefined && typeof comentario !== 'string') {
+        throw new Error('El comentario debe ser texto.');
+    }
+
+    const updatedConsultation = await consultationRepository.updateConsultationRating(
+        consultationId,
+        studentId,
+        {
+            calificacion,
+            comentario: comentario || '',
+            fechaCalificacion: new Date()
+        }
+    );
+    if (!updatedConsultation) {
+        throw new Error('No se pudo editar la calificación. Verifica que sea tuya y esté activa.');
+    }
+    return updatedConsultation;
+}
+
+// El borrado lógico conserva el registro para los indicadores administrativos.
+export async function archiveStudentConsultation(consultationId, studentId) {
+    const archived = await consultationRepository.archiveConsultation(consultationId, studentId);
+    if (!archived) {
+        throw new Error('No se pudo eliminar la consulta. Verifica que sea tuya y no esté eliminada.');
+    }
 }
 
 // Estadísticas

@@ -6,6 +6,7 @@ import studentRoutes from './src/routes/studentRoutes.js'
 import courseRoutes from './src/routes/courseRoutes.js'
 import chatRoutes from './src/routes/chatRoutes.js'
 import consultationRoutes from './src/routes/consultationRoutes.js'
+import authRoutes from './src/routes/authRoutes.js'
 import { errorHandler } from './src/middlewares/errorMiddleware.js';
 import swaggerUi from 'swagger-ui-express';
 import { openapiSpecification } from './src/config/openapi.js';
@@ -18,7 +19,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==== Middleware Globales ===
-app.use(cors());
+// Limita las peticiones del navegador a los frontends configurados por entorno.
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 // Documentación interactiva y especificación OpenAPI descargable
@@ -32,6 +38,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification, {
 
 // Rutas de la API
 app.use('/api/students',studentRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/chat',chatRoutes);
 app.use('/api/consultation',consultationRoutes);

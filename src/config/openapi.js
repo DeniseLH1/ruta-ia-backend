@@ -94,12 +94,13 @@ const consultationSchema = {
 
 const studentRequestSchema = {
   type: 'object',
-  required: ['nombreCompleto', 'email', 'nivelExperiencia', 'areaInteres'],
+  required: ['nombreCompleto', 'email', 'nivelExperiencia', 'areaInteres', 'password'],
   properties: {
     nombreCompleto: { type: 'string', minLength: 1, example: 'Ana Pérez' },
     email: { type: 'string', format: 'email', example: 'ana@example.com' },
     nivelExperiencia: { type: 'string', enum: ['Principiante', 'Intermedio', 'Avanzado'] },
-    areaInteres: { type: 'string', minLength: 1, example: 'Desarrollo web' }
+    areaInteres: { type: 'string', minLength: 1, example: 'Desarrollo web' },
+    password: { type: 'string', minLength: 8, format: 'password' }
   }
 };
 
@@ -117,12 +118,13 @@ const courseRequestSchema = {
 
 const consultationRequestSchema = {
   type: 'object',
-  required: ['studentId', 'mensaje'],
+  required: ['mensaje'],
   properties: {
-    studentId: idSchema,
     mensaje: { type: 'string', minLength: 1, example: 'Quiero aprender a crear páginas web.' }
   }
 };
+
+const bearerAuth = [{ bearerAuth: [] }];
 
 export const openapiSpecification = {
   openapi: '3.0.3',
@@ -142,6 +144,67 @@ export const openapiSpecification = {
     { name: 'Chat', description: 'Asistente conectado a n8n' }
   ],
   paths: {
+    '/api/auth/student/login': {
+      post: {
+        tags: ['Estudiantes'],
+        summary: 'Iniciar sesión como estudiante',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', format: 'password' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: response('Sesión de estudiante iniciada.', { type: 'object' }),
+          401: response('Credenciales incorrectas.', errorSchema)
+        }
+      }
+    },
+    '/api/auth/admin/login': {
+      post: {
+        tags: ['Estudiantes'],
+        summary: 'Iniciar sesión como administrador',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['username', 'password'],
+                properties: {
+                  username: { type: 'string' },
+                  password: { type: 'string', format: 'password' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: response('Sesión de administrador iniciada.', { type: 'object' }),
+          401: response('Credenciales incorrectas.', errorSchema)
+        }
+      }
+    },
+    '/api/auth/me': {
+      get: {
+        tags: ['Estudiantes'],
+        summary: 'Verificar la sesión actual',
+        security: bearerAuth,
+        responses: {
+          200: response('Usuario autenticado.', { type: 'object' }),
+          401: response('La sesión es inválida o ha expirado.', errorSchema)
+        }
+      }
+    },
     '/': {
       get: {
         tags: ['Salud'],
@@ -168,7 +231,13 @@ export const openapiSpecification = {
           content: { 'application/json': { schema: studentRequestSchema } }
         },
         responses: {
-          201: response('Estudiante registrado.', successEnvelope(studentSchema, {
+          201: response('Estudiante registrado y sesión iniciada.', successEnvelope({
+            type: 'object',
+            properties: {
+              token: { type: 'string' },
+              user: { type: 'object' }
+            }
+          }, {
             message: { type: 'string', example: 'Estudiante registrado exitosamente' }
           })),
           400: response('Datos inválidos o correo ya registrado.', errorSchema)
@@ -177,6 +246,7 @@ export const openapiSpecification = {
       get: {
         tags: ['Estudiantes'],
         summary: 'Listar estudiantes registrados',
+        security: bearerAuth,
         responses: {
           200: response('Lista de estudiantes.', successEnvelope({
             type: 'array',
@@ -190,6 +260,7 @@ export const openapiSpecification = {
       get: {
         tags: ['Estudiantes'],
         summary: 'Consultar un estudiante por ID',
+        security: bearerAuth,
         parameters: [idParameter],
         responses: {
           200: response('Estudiante encontrado.', successEnvelope(studentSchema)),
@@ -218,6 +289,7 @@ export const openapiSpecification = {
       post: {
         tags: ['Cursos'],
         summary: 'Registrar un curso',
+        security: bearerAuth,
         requestBody: {
           required: true,
           content: { 'application/json': { schema: courseRequestSchema } }
@@ -227,6 +299,17 @@ export const openapiSpecification = {
             message: { type: 'string', example: 'Curso registrado exitosamente.' }
           })),
           400: response('Datos del curso inválidos.', errorSchema)
+        }
+      }
+    },
+    '/api/courses/admin': {
+      get: {
+        tags: ['Cursos'],
+        summary: 'Listar todos los cursos para administración',
+        security: bearerAuth,
+        responses: {
+          200: response('Cursos activos e inactivos.', successEnvelope({ type: 'array', items: courseSchema })),
+          403: response('Solo administradores.', errorSchema)
         }
       }
     },
@@ -243,6 +326,7 @@ export const openapiSpecification = {
       put: {
         tags: ['Cursos'],
         summary: 'Actualizar un curso',
+        security: bearerAuth,
         description: 'Aplica los campos enviados sobre el curso existente.',
         parameters: [idParameter],
         requestBody: {
@@ -260,6 +344,7 @@ export const openapiSpecification = {
         tags: ['Cursos'],
         summary: 'Desactivar un curso',
         description: 'Cambia el estado del curso a inactivo; dejará de aparecer en el catálogo.',
+        security: bearerAuth,
         parameters: [idParameter],
         responses: {
           200: response('Curso desactivado.', successEnvelope(courseSchema)),
@@ -271,7 +356,8 @@ export const openapiSpecification = {
       post: {
         tags: ['Consultas'],
         summary: 'Enviar una consulta RAG',
-        description: 'Guarda primero la consulta y luego envía mensaje, identificador y perfil del estudiante al webhook de n8n.',
+        description: 'Identifica al estudiante mediante JWT, guarda primero la consulta y luego envía pregunta, identificador y perfil a n8n.',
+        security: bearerAuth,
         requestBody: {
           required: true,
           content: { 'application/json': { schema: consultationRequestSchema } }
@@ -285,6 +371,7 @@ export const openapiSpecification = {
       get: {
         tags: ['Consultas'],
         summary: 'Consultar historial completo',
+        security: bearerAuth,
         responses: {
           200: response('Consultas ordenadas desde la más reciente.', successEnvelope({
             type: 'array',
@@ -294,10 +381,25 @@ export const openapiSpecification = {
         }
       }
     },
+    '/api/consultation/mine': {
+      get: {
+        tags: ['Consultas'],
+        summary: 'Consultar el historial propio (sin consultas archivadas)',
+        security: bearerAuth,
+        responses: {
+          200: response('Historial del estudiante autenticado.', successEnvelope({
+            type: 'array',
+            items: consultationSchema
+          })),
+          401: response('Debes iniciar sesión.', errorSchema)
+        }
+      }
+    },
     '/api/consultation/student/{studentId}': {
       get: {
         tags: ['Consultas'],
         summary: 'Consultar historial de un estudiante',
+        security: bearerAuth,
         parameters: [{
           ...idParameter,
           name: 'studentId',
@@ -318,6 +420,7 @@ export const openapiSpecification = {
         tags: ['Consultas'],
         summary: 'Calificar una consulta respondida',
         description: 'Acepta una única calificación entera entre 1 y 5 y un comentario opcional.',
+        security: bearerAuth,
         parameters: [idParameter],
         requestBody: {
           required: true,
@@ -338,7 +441,49 @@ export const openapiSpecification = {
           200: response('Calificación guardada.', successEnvelope(consultationSchema, {
             message: { type: 'string', example: 'Calificación registrada con éxito.' }
           })),
-          400: response('Calificación inválida, consulta no respondida o ya calificada.', errorSchema)
+          400: response('Calificación inválida, consulta no respondida o ya calificada.', errorSchema),
+          403: response('La consulta pertenece a otro estudiante.', errorSchema)
+        }
+      },
+      put: {
+        tags: ['Consultas'],
+        summary: 'Editar la calificación propia de una consulta',
+        security: bearerAuth,
+        parameters: [idParameter],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['calificacion'],
+                properties: {
+                  calificacion: { type: 'integer', minimum: 1, maximum: 5 },
+                  comentario: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          200: response('Calificación actualizada.', successEnvelope(consultationSchema)),
+          404: response('La consulta no existe o no pertenece al estudiante.', errorSchema)
+        }
+      }
+    },
+    '/api/consultation/{id}': {
+      delete: {
+        tags: ['Consultas'],
+        summary: 'Ocultar una consulta propia del historial',
+        description: 'Borrado lógico: conserva el registro para estadísticas.',
+        security: bearerAuth,
+        parameters: [idParameter],
+        responses: {
+          200: response('Consulta archivada.', successEnvelope({
+            type: 'object',
+            properties: { message: { type: 'string' } }
+          })),
+          404: response('La consulta no existe o no pertenece al estudiante.', errorSchema)
         }
       }
     },
@@ -346,6 +491,7 @@ export const openapiSpecification = {
       get: {
         tags: ['Consultas'],
         summary: 'Obtener estadísticas básicas',
+        security: bearerAuth,
         responses: {
           200: response('Estadísticas calculadas desde MongoDB.', successEnvelope({
             type: 'object',
@@ -367,6 +513,7 @@ export const openapiSpecification = {
         tags: ['Chat'],
         summary: 'Enviar un mensaje al asistente conectado a n8n',
         description: 'Endpoint de chat sin asociación de estudiante ni registro de historial. Para recomendaciones con historial, usa POST /api/consultation.',
+        security: bearerAuth,
         requestBody: {
           required: true,
           content: {
@@ -391,6 +538,13 @@ export const openapiSpecification = {
     }
   },
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      }
+    },
     schemas: {
       Error: errorSchema,
       Student: studentSchema,

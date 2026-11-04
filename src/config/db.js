@@ -22,6 +22,13 @@ export async function connectDB() {
         client = new MongoClient(uri);
         await client.connect();
         dbInstance = client.db(dbName);
+        // Impide correos duplicados y acelera filtros frecuentes del catálogo e historial.
+        await dbInstance.collection('estudiantes').createIndex(
+            { email: 1 },
+            { unique: true, collation: { locale: 'en', strength: 2 } }
+        );
+        await dbInstance.collection('consultas').createIndex({ studentId: 1, fecha: -1 });
+        await dbInstance.collection('cursos').createIndex({ estado: 1, categoria: 1, nivel: 1 });
         console.log(' Conectado exitosamente a MongoDB');
         return dbInstance;
     } catch (error) {
