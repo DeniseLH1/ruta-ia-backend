@@ -7,6 +7,8 @@ import courseRoutes from './src/routes/courseRoutes.js'
 import chatRoutes from './src/routes/chatRoutes.js'
 import consultationRoutes from './src/routes/consultationRoutes.js'
 import { errorHandler } from './src/middlewares/errorMiddleware.js';
+import swaggerUi from 'swagger-ui-express';
+import { openapiSpecification } from './src/config/openapi.js';
 
 // Carga de las variables de entorno
 dotenv.config();
@@ -18,6 +20,15 @@ const PORT = process.env.PORT || 3000;
 // ==== Middleware Globales ===
 app.use(cors());
 app.use(express.json());
+
+// Documentación interactiva y especificación OpenAPI descargable
+app.get('/api-docs.json', (req, res) => {
+    res.status(200).json(openapiSpecification);
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification, {
+    explorer: true,
+    customSiteTitle: 'RutaIA API - Swagger'
+}));
 
 // Rutas de la API
 app.use('/api/students',studentRoutes);

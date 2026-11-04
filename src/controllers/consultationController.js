@@ -46,3 +46,13 @@ export async function getHistorialConsultas(req, res) {
         return res.status(500).json({ status: 'error', message: error.message });
     }
 }
+
+export async function getHistorialEstudiante(req, res) {
+    try {
+        const history = await consultationService.getStudentHistory(req.params.studentId);
+        return res.status(200).json({ status: 'success', total: history.length, data: history });
+    } catch (error) {
+        const statusCode = error.message.includes('no es válido') ? 400 : 500;
+        return res.status(statusCode).json({ status: 'error', message: error.message });
+    }
+}

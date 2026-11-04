@@ -14,6 +14,85 @@
     },
     {
       "parameters": {
+        "url": "http://qdrant:6333/collections",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -352,
+        -800
+      ],
+      "id": "ce4f6b19-c800-42ab-b37f-3b46cac39c49",
+      "name": "Consultar colecciones Qdrant"
+    },
+    {
+      "parameters": {
+        "jsCode": "const collections = $json.result?.collections || [];\nreturn [{ json: { collectionExists: collections.some((collection) => collection.name === 'cursos_ia') } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        -800
+      ],
+      "id": "9c3268bf-a1d4-4856-834a-940e0fe70993",
+      "name": "Comprobar colección"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b643f30e-8aa8-415a-99e8-1c0309021aaf",
+              "leftValue": "={{ $json.collectionExists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -800
+      ],
+      "id": "4d065a08-ea52-4a56-a97b-03d7c6c1ae47",
+      "name": "¿Existe colección?"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://qdrant:6333/collections/cursos_ia",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vectors\": {\n    \"size\": 1536,\n    \"distance\": \"Cosine\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        -656
+      ],
+      "id": "87660cda-ef5c-442d-adfe-ae2d670a90a1",
+      "name": "Crear colección Qdrant"
+    },
+    {
+      "parameters": {
         "url": "http://host.docker.internal:3000/api/courses",
         "options": {}
       },
@@ -83,11 +162,24 @@
     },
     {
       "parameters": {
+          "jsCode": "const items = $input.all();\nfor (const item of items) {\n  const embedding = item.json.data?.[0]?.embedding;\n  if (!Array.isArray(embedding) || embedding.length !== 1536 || !embedding.every((value) => typeof value === 'number' && Number.isFinite(value))) {\n    throw new Error('OpenRouter devolvió un embedding inválido para el curso.');\n  }\n}\nreturn items;"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -16,
+          -320
+        ],
+        "id": "c45df660-13cb-4d15-9c2c-5412b2422d03",
+        "name": "Validar embedding"
+    },
+    {
+        "parameters": {
         "method": "PUT",
         "url": "http://qdrant:6333/collections/cursos_ia/points",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"points\": [\n    {\n      \"id\": {{ $itemIndex + 1 }},\n      \"vector\": {{ JSON.stringify($json.data[0].embedding) }},\n      \"payload\": {\n        \"mongo_id\": \"{{ $('Split Out').item.json._id }}\",\n        \"nombre\": \"{{ $('Split Out').item.json.nombre }}\",\n        \"descripcion\": \"{{ $('Split Out').item.json.descripcion }}\",\n        \"categoria\": \"{{ $('Split Out').item.json.categoria }}\",\n        \"nivel\": \"{{ $('Split Out').item.json.nivel }}\",\n        \"duracion\": \"{{ $('Split Out').item.json.duración }}\"\n      }\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"points\": [\n    {\n      \"id\": \"00000000-{{ $('Split Out').item.json._id.substring(0, 4) }}-{{ $('Split Out').item.json._id.substring(4, 8) }}-{{ $('Split Out').item.json._id.substring(8, 12) }}-{{ $('Split Out').item.json._id.substring(12, 24) }}\",\n      \"vector\": {{ JSON.stringify($json.data[0].embedding) }},\n      \"payload\": {\n        \"mongo_id\": \"{{ $('Split Out').item.json._id }}\",\n        \"nombre\": \"{{ $('Split Out').item.json.nombre }}\",\n        \"descripcion\": \"{{ $('Split Out').item.json.descripcion }}\",\n        \"categoria\": \"{{ $('Split Out').item.json.categoria }}\",\n        \"nivel\": \"{{ $('Split Out').item.json.nivel }}\",\n        \"duracion\": {{ $('Split Out').item.json.duración }},\n        \"estado\": \"{{ $('Split Out').item.json.estado }}\"\n      }\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -103,6 +195,57 @@
   "pinData": {},
   "connections": {
     "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Consultar colecciones Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar colecciones Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Comprobar colección",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprobar colección": {
+      "main": [
+        [
+          {
+            "node": "¿Existe colección?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe colección?": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Crear colección Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear colección Qdrant": {
       "main": [
         [
           {
@@ -136,6 +279,17 @@
       ]
     },
     "OpenRouter": {
+      "main": [
+        [
+          {
+            "node": "Validar embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar embedding": {
       "main": [
         [
           {

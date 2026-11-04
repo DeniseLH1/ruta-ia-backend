@@ -30,6 +30,21 @@ export async function updateConsultation(id, updateData) {
     return await findConsultationById(id);
 }
 
+export async function addConsultationRating(id, ratingData) {
+    const collection = await getCollection();
+    if (!ObjectId.isValid(id)) return null;
+    const result = await collection.updateOne(
+        {
+            _id: new ObjectId(id),
+            estado: 'Respondida',
+            calificacion: { $exists: false }
+        },
+        { $set: ratingData }
+    );
+    if (result.matchedCount === 0) return null;
+    return await findConsultationById(id);
+}
+
 export async function findConsultationById(id) {
     const collection = await getCollection();
     if (!ObjectId.isValid(id)) return null;
@@ -39,6 +54,15 @@ export async function findConsultationById(id) {
 export async function findAllConsultations() {
     const collection = await getCollection();
     return await collection.find({}).sort({ fecha: -1 }).toArray();
+}
+
+export async function findConsultationsByStudentId(studentId) {
+    const collection = await getCollection();
+    if (!ObjectId.isValid(studentId)) return null;
+    return await collection
+        .find({ studentId: new ObjectId(studentId) })
+        .sort({ fecha: -1 })
+        .toArray();
 }
 
 // Calcula estadísticas básicas

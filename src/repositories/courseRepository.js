@@ -48,15 +48,15 @@ export async function updateCourse(id, updateData) {
         const result = await collection.findOneAndUpdate(
             {_id: new ObjectId(id)},
             {$set: updateData},
-            {ReturnDocument: 'after'}
+            { returnDocument: 'after' }
         );
-        return result;
+        return result ?? null;
     }catch(error){
         throw new Error('No se pudo actualizar el curso')
     }
 }
 
 // Cambia el estado de un curso a inactivo
-export async function desactivateCourse(id) {
+export async function deactivateCourse(id) {
     return await updateCourse(id,{estado: 'inactivo'});
 }
