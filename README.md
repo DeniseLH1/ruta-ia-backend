@@ -4,6 +4,13 @@
 
 ---
 
+## Link frontend
+* **Jennifer Denise López Hernández** 
+
+---
+
+---
+
 ## Integrante:
 * **Jennifer Denise López Hernández** 
 
@@ -100,12 +107,18 @@ docker-compose up -d
 ```
 npm run dev 
 ```
+**Documentación Swagger:** con el backend activo, abre [http://localhost:3000/api-docs](http://localhost:3000/api-docs). La especificación OpenAPI en JSON está disponible en [http://localhost:3000/api-docs.json](http://localhost:3000/api-docs.json). Estas URLs sirven como evidencia consultable de los endpoints documentados.
+
 **Importar los workflows de n8n:**
 1. Abre la interfaz de n8n en http://localhost:5678.
 
 2. Importa los archivos JSON ubicados en la carpeta n8n-workflow/ (Indexación_cursos.json y Consulta_RAG.json).
 
 3. Activa los flujos y verifica las credenciales de OpenRouter.
+
+El workflow `Indexación_cursos` crea `cursos_ia` si falta (1536 dimensiones, distancia Cosine) y la reutiliza si ya existe. Registra al menos 20 cursos activos y ejecuta el workflow después de importar los cambios para indexarlos con el campo `estado` y los IDs deterministas. Si la colección ya existe con otra configuración de vectores, corrige esa configuración en Qdrant antes de indexar.
+
+El workflow `Consulta_RAG` busca hasta cinco cursos activos, aplica un umbral inicial de similitud de `0.35` y devuelve `respuesta`, `fuentes` y `estado` (`Respondida` o `Sin resultados`). El umbral es un valor inicial que debe ajustarse tras probar consultas representativas contra el catálogo institucional.
 
 ## Endpoints Principales de la API
 1. Estudiantes (/api/students)
@@ -130,6 +143,8 @@ npm run dev
 - `POST /api/consultation` - Envía una consulta RAG. Recibe `studentId` y `mensaje`, y almacena la recomendación y sus fuentes.
 
 - `GET /api/consultation` - Mostrar el historial de consultas con fecha, estado y fuentes.
+
+- `GET /api/consultation/student/:studentId` - Consultar el historial de un estudiante.
 
 - `POST /api/consultation/:id/rate` - Registrar una calificación única (de 1 a 5) y un comentario opcional.
 
