@@ -5,7 +5,7 @@
 ---
 
 ## Link frontend
-* **Jennifer Denise López Hernández** 
+https://github.com/DeniseLH1/ruta-ia-frontend.git
 
 ---
 
