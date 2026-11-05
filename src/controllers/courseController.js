@@ -90,3 +90,20 @@ export async function patchDisableCourse(req, res) {
     });
   }
 }
+
+// Reactiva un curso previamente desactivado
+export async function patchEnableCourse(req, res) {
+  try {
+    const enabledCourse = await courseService.enableCourse(req.params.id);
+    return res.status(200).json({
+      status: 'success',
+      message: 'Curso reactivado correctamente.',
+      data: enabledCourse
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+}

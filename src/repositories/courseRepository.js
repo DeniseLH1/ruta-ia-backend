@@ -60,3 +60,8 @@ export async function updateCourse(id, updateData) {
 export async function deactivateCourse(id) {
     return await updateCourse(id,{estado: 'inactivo'});
 }
+
+// Cambia el estado de un curso a activo
+export async function activateCourse(id) {
+    return await updateCourse(id, { estado: 'activo' });
+}

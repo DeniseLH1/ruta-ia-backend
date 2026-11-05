@@ -103,3 +103,16 @@ export async function disableCourse(id) {
   }
   return disabledCourse;
 }
+
+// Reactiva un curso desactivado para que vuelva a aparecer en el catálogo.
+export async function enableCourse(id) {
+  const course = await courseRepository.findCourseById(id);
+  if (!course) {
+    throw new Error('No se pudo reactivar el curso. Verifica el ID.');
+  }
+  const enabledCourse = await courseRepository.activateCourse(id);
+  if (!enabledCourse) {
+    throw new Error('No se pudo reactivar el curso. Verifica el ID.');
+  }
+  return enabledCourse;
+}

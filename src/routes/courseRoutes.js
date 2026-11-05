@@ -4,7 +4,8 @@ import {
   getCatalog,
   getCourseDetails,
   putUpdateCourse,
-  patchDisableCourse
+  patchDisableCourse,
+  patchEnableCourse
 } from '../controllers/courseController.js';
 import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
 
@@ -27,5 +28,8 @@ router.put('/:id', authenticate, authorizeRoles('admin'), putUpdateCourse);
 
 // PATCH /api/courses/:id/disable - Desactivar un curso 
 router.patch('/:id/disable', authenticate, authorizeRoles('admin'), patchDisableCourse);
+
+// PATCH /api/courses/:id/enable - Reactivar un curso
+router.patch('/:id/enable', authenticate, authorizeRoles('admin'), patchEnableCourse);
 
 export default router;
